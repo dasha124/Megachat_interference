@@ -18,11 +18,6 @@ def xor(X):
     return 0 if X.count('1') % 2 == 0 else 1
 
 
-def make_C(i, n):
-    return int(factorial(n)/(factorial(i)*(factorial(n-i))))
-
-
-
 CALLBACK_URL = "http://0.0.0.0:3000/from_codding_to_main/"
 def codding(json_data):
     print('3')
