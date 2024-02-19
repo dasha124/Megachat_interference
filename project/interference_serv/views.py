@@ -104,8 +104,10 @@ def codding(json_data):
     bit_array = bitarray.bitarray(bit_string)
     bytes_data = bit_array.tobytes()
 
-
-    data = bytes_data.decode("utf-8")
+    # байты в формат base64
+    base64_data = base64.b64encode(bytes_data)
+    
+    data = base64_data
     print(data, len(bytes_data))
 
     # вероятность отправки пакета
