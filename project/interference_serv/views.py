@@ -18,9 +18,6 @@ def xor(X):
     return 0 if X.count('1') % 2 == 0 else 1
 
 
-def make_C(i, n):
-    return int(factorial(n)/(factorial(i)*(factorial(n-i))))
-
 
 
 CALLBACK_URL = "http://0.0.0.0:3000/from_codding_to_main/"
@@ -34,7 +31,13 @@ def codding(json_data):
 
     data = json_data["payload"]["data"]
     print(data)
-    data = data.encode("utf-8") # перевод строки данных в байты
+    # из base64 в байты 
+    decoded_bytes = base64.b64decode(data)
+    data = decoded_bytes
+
+
+
+    #data = data.encode("utf-8") # перевод строки данных в байты
 
     # print("_data0 =", data)
     #---------------------------------------------------------------------------------------------#
