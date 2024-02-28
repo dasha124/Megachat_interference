@@ -20,7 +20,8 @@ def xor(X):
 
 
 
-CALLBACK_URL = "http://0.0.0.0:3000/from_codding_to_main/"
+CALLBACK_URL = "http://192.168.207.1:8800/coding"
+
 def codding(json_data):
     print('3')
     user = json_data["username"]
@@ -59,7 +60,7 @@ def codding(json_data):
 
 
     # наложение ошибки
-    random_number = random.randint(1, 1)
+    random_number = random.randint(1, 10)
     if random_number == 1: #  вероятность ошибки = 10%
         print("Возникли помехи при передаче сообщения")
         random_position1 = random.randint(0, len(bits_arr)-1)
@@ -107,7 +108,8 @@ def codding(json_data):
     # байты в формат base64
     base64_data = base64.b64encode(bytes_data)
     
-    data = base64_data
+    data = str(base64_data)[2:]
+    data = data[:-1]
     print(data, len(bytes_data))
 
     # вероятность отправки пакета
@@ -123,7 +125,8 @@ def codding(json_data):
             "segment_cnt": segment_cnt
         }
         }
-        requests.put(CALLBACK_URL,  json=answer, timeout=3)
+        print("============", answer)
+        requests.post(CALLBACK_URL,  json=answer)
     else:
         if (random.randint(0,  10000) >  17) and (f!=0):
             print("Пакет отправлен c ошибкой")
@@ -137,15 +140,15 @@ def codding(json_data):
                 "segment_cnt": segment_cnt
             }
             }
-            requests.put(CALLBACK_URL,  json=answer, timeout=3) 
+            requests.post(CALLBACK_URL,  json=answer) 
 
 @csrf_exempt
 def interference_serv(request):
     print("2")
     try:
 
-        json_data = json.loads(request.body.decode('utf-8'))
-        print(json_data)
+        json_data = json.loads(request.body)
+        print("-------------------------------------------", json_data)
         codding(json_data)
         return HttpResponse('Hello world!')
     
