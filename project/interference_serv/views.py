@@ -13,6 +13,8 @@ import bitarray
 import struct
 import base64
 
+# в постмане дергаю свой метод, если к диме подключена, то все ок, иначе - ошибка подключпения
+
 
 def xor(X):
     return 0 if X.count('1') % 2 == 0 else 1
@@ -20,10 +22,11 @@ def xor(X):
 
 
 
-CALLBACK_URL = "http://192.168.207.1:8800/coding"
+CALLBACK_URL = "http://172.16.82.155:8800/coding"
 
 def codding(json_data):
-    print('3')
+    print('\n')
+    print('2. Начало этапа кодирования')
     user = json_data["username"]
     time = json_data["time"]
     segment_num = json_data["payload"]["segment_num"]
@@ -31,11 +34,10 @@ def codding(json_data):
 
 
     data = json_data["payload"]["data"]
-    print(data)
+    # print(data)
     # из base64 в байты 
     decoded_bytes = base64.b64decode(data)
     data = decoded_bytes
-
 
 
     #data = data.encode("utf-8") # перевод строки данных в байты
@@ -44,56 +46,81 @@ def codding(json_data):
     #---------------------------------------------------------------------------------------------#
     bit_str = "".join(f"{byte:08b}" for byte in data)
 
-
     # кодирование Хемминогом [7,4]
+    print('\n')
+    print("Проверка правильности кодирования кодом Хемминга [7,4] для первого вектора:")
     arr0 =[]
     bits_arr =[]
     for i in range(0, len(bit_str), 4):
-
         information_vector =  bit_str[i:i+4]
         arr0.append(information_vector)
+
         codded_vector = information_vector[:3] + str(xor([information_vector[i] for i in range(3)])) + \
                     information_vector[3] + str(xor([information_vector[i] for i in [0, 1, 3]])) + \
                     str(xor([information_vector[i] for i in [0, 2, 3]]))
         bits_arr.append(codded_vector)
-    # print("----------bits-----------",bits_arr)
+        if i==0:
+            print("Информационный вектор =", information_vector)
+            print("Закодированный вектор =", codded_vector)
+            print('\n')
 
 
     # наложение ошибки
     random_number = random.randint(1, 10)
     if random_number == 1: #  вероятность ошибки = 10%
-        print("Возникли помехи при передаче сообщения")
+        print("3. Наложение ошибки при передаче сообщения")
+        print('\n')
         random_position1 = random.randint(0, len(bits_arr)-1)
         random_position2 = random.randint(0, 6)
         word = bits_arr[random_position1]
         opposite_char = '0' if word[random_position2] == '1' else '1'
         updated_word = word[:(random_position2)] + opposite_char + word[random_position2+1:]
         bits_arr[random_position1] = updated_word
+        print("Исходный вектор =", word)
+        print("Вектор с ошибкой в", random_position2, 'разряде =', updated_word)
+        print('\n')
         # print(bits_arr)
 
         bits_arr2 = []
+        cf = 0
         for code_item in bits_arr:
             syndrome = str(xor([code_item[i] for i in [0, 1, 2, 3]])) + \
                     str(xor([code_item[i] for i in [0, 1, 4, 5]])) + \
                     str(xor([code_item[i] for i in [0, 2, 4, 6]]))
+            if cf == 0:
+                print("Проверка вычисления синдрома ошибки для первого вектора:")
+                print("Вектор =", code_item, "Синдром =", syndrome)
+                cf = 1
+            
             if syndrome != '000':
                 if code_item[7 - int(syndrome, 2)] == '0':
                     code_vector = code_item[:7 - int(syndrome, 2)] + '1' + code_item[7 - int(syndrome, 2) + 1:]
                 else:
                     code_vector = code_item[:7 - int(syndrome, 2)] + '0' + code_item[7 - int(syndrome, 2) + 1:]
                 bits_arr2.append(code_vector)
+                print("Поверка исправления вектора с помощью синдрома ошибки:")
+                print("Синдром =", syndrome, "Вектор с ошибкой =", code_item, "Исправленный вектор =", code_vector)
             else:
                 bits_arr2.append(code_item)
+            
 
         # print("bits_arr2 = ", bits_arr2)
         bits_arr = bits_arr2
     else:
-        print("Помехи в канале передачи не возникли")
+        print("3. Помехи в канале передачи не возникли")
+    
     
     # декодирование
+    print('\n')
+    print("4. Декодирование")
     bits_arr3 =[]
+    cf = 0
     for item in bits_arr:
         bits_arr3.append(str(item[:3]+item[4]))
+        if cf == 0:
+            print("Проверка:")
+            print("Исходный вектор =", item, "Декодированный вектор =", str(item[:3]+item[4]))
+            cf = 1
 
     if bits_arr3 == arr0:
         f = 0
@@ -110,11 +137,12 @@ def codding(json_data):
     
     data = str(base64_data)[2:]
     data = data[:-1]
-    print(data, len(bytes_data))
+    # print(data, len(bytes_data))
 
     # вероятность отправки пакета
+    print('\n')
+    print("5. Этап отправки пакета")
     if (random.randint(0,  10000) >  17) and (f==0):
-        print("Пакет отправлен")
         answer = {
         "username": user,
         "time": time,
@@ -125,8 +153,19 @@ def codding(json_data):
             "segment_cnt": segment_cnt
         }
         }
-        print("============", answer)
-        requests.post(CALLBACK_URL,  json=answer)
+        print("Отправляемые данные:")
+        print(answer)
+        try:
+            response = requests.post(CALLBACK_URL, json=answer)
+            if response.status_code == 200:
+                print("Данные успешно отправлены на транспортный уровень")
+                print()
+                # print("Отправляемые данные:")
+                # print(answer)
+            else:
+                print(f"Ошибка при отправке данных. Код состояния: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            print("Ошибка подключения к транспортному уровню")
     else:
         if (random.randint(0,  10000) >  17) and (f!=0):
             print("Пакет отправлен c ошибкой")
@@ -140,15 +179,30 @@ def codding(json_data):
                 "segment_cnt": segment_cnt
             }
             }
-            requests.post(CALLBACK_URL,  json=answer) 
+            try:
+                print("Отправленные данные:")
+                print(answer)
+                response = requests.post(CALLBACK_URL, json=answer)
+                if response.status_code == 200:
+                    print("Данные успешно отправлены на транспортный уровень")
+                    # print()
+                    # print("Отправляемые данные:")
+                    # print(answer)
+                else:
+                    print(f"Ошибка при отправке данных. Код состояния: {response.status_code}")
+            except requests.exceptions.RequestException as e:
+                print("Ошибка подключения к транспортному уровню")
+        else:
+            print("Потеря пакета") 
 
 @csrf_exempt
 def interference_serv(request):
-    print("2")
+    print("1. Начало работы канального уровня")
     try:
 
         json_data = json.loads(request.body)
-        print("-------------------------------------------", json_data)
+        print("Данные, принятые с транспортного уровня:")
+        print(json_data)
         codding(json_data)
         return HttpResponse('Hello world!')
     
