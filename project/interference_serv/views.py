@@ -30,7 +30,7 @@ CALLBACK_URL = "http://172.16.82.155:8800/coding"
 
 
 def set_error(bits_arr):
-    random_number = random.randint(1, 10)
+    random_number = random.randint(1, 2)
     if random_number == 1: #  вероятность ошибки = 10%
         print("3. Наложение ошибки при передаче сообщения")
         print('\n')
@@ -41,7 +41,7 @@ def set_error(bits_arr):
         updated_word = word[:(random_position2)] + opposite_char + word[random_position2+1:]
         bits_arr[random_position1] = updated_word
         print("Исходный вектор =", word)
-        print("Вектор с ошибкой в", random_position2+1, 'разряде =', updated_word)
+        print("Вектор с ошибкой в", 6 - random_position2+1, 'разряде =', updated_word)
         print('\n')
         # print(bits_arr)
 
@@ -88,7 +88,11 @@ def decoddinng(bits_arr):
 def send_data(user, time, data, segment_num, segment_cnt, f):
     print('\n')
     print("5. Этап отправки пакета")
-    if (random.randint(0,  10000) >  17) and (f==0):
+    if (random.randint(0,  10000) >  17):
+        F = 0
+    else:
+        F = 1
+    if (F == 0) and (f==0):
         answer = {
         "username": user,
         "time": time,
@@ -116,7 +120,7 @@ def send_data(user, time, data, segment_num, segment_cnt, f):
         except requests.exceptions.HTTPError as err:
             print(f"Ошибка HTTP: {err}")
     else:
-        if (random.randint(0,  10000) >  17) and (f!=0):
+        if (F == 0) and (f!=0):
             print("Пакет отправлен c ошибкой")
             answer = {
             "username": user,
@@ -143,7 +147,7 @@ def send_data(user, time, data, segment_num, segment_cnt, f):
                 print("Ошибка подключения к транспортному уровню")
             except requests.exceptions.HTTPError as err:
                 print(f"Ошибка HTTP: {err}")
-        else:
+        elif (F == 1):
             print("Потеря пакета") 
 
 
